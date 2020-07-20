@@ -1,0 +1,106 @@
+drop table faculty;
+drop table student;
+drop table course;
+drop table enrollment;
+
+-- create table Faculty
+create table faculty
+(faculty_id VARCHAR(25), 
+fac_name VARCHAR(25), 
+office VARCHAR(25), 
+salary DECIMAL(10,2),  
+CONSTRAINT pk_faculty PRIMARY KEY (faculty_id)
+);
+
+-- create table student
+create table student
+( student_id VARCHAR(25), 
+std_name VARCHAR(25), 
+home_phone CHAR(12), 
+total_credits INTEGER, 
+gpa DECIMAL(3,2), -- 4.0 GPA
+advisor_id VARCHAR(25),
+CONSTRAINT pk_student PRIMARY KEY (student_id),
+CONSTRAINT fk_student FOREIGN KEY (advisor_id) REFERENCES faculty(faculty_id)
+);
+
+
+-- create table course
+create table course
+(course# CHAR(12), 
+credit_hours INTEGER, 
+time INTEGER, 
+location VARCHAR(25), 
+faculty_id VARCHAR(25),
+CONSTRAINT pk_course PRIMARY KEY (course#),
+CONSTRAINT fk_course FOREIGN KEY (faculty_id) REFERENCES faculty(faculty_id)
+);
+
+-- create table enrollment
+create table enrollment
+(student_id VARCHAR(25), 
+course# CHAR(12), 
+grade DECIMAL(5,2), -- total of 100.00
+CONSTRAINT fk_enrollmentST FOREIGN KEY (student_id) REFERENCES student(student_id),
+CONSTRAINT fk_enrollmentCR FOREIGN KEY (course#) REFERENCES course(course#)
+);
+
+
+
+-- insert data
+INSERT INTO faculty VALUES( 'fa1', 'FA_1', 'OFF_1', '500.0');
+INSERT INTO faculty VALUES( 'fa2', 'FA_2', 'OFF_2', '400.0');
+INSERT INTO faculty VALUES( 'fa3', 'FA_3', 'OFF_3', '359.755');
+
+INSERT INTO student VALUES ('st1' , 'ST_1', '111-222', 6, '3.5', 'fa1');
+INSERT INTO student VALUES ('st2' , 'ST_2', '222-222', 6, '3.4', 'fa1');
+INSERT INTO student VALUES ('st3' , 'ST_3', '333-222', 8, '3.3', 'fa1');
+INSERT INTO student VALUES ('st4' , 'ST_4', '444-222', 8, '3.2', 'fa2');
+INSERT INTO student VALUES ('st5' , 'ST_5', '555-222', 10, '3.1', 'fa2');
+
+
+INSERT INTO course VALUES('c001', 10, 800, 'CL_1', 'fa1');
+INSERT INTO course VALUES('c002', 8, 1000, 'CL_2', 'fa2');
+INSERT INTO course VALUES('c003', 5, 1100, 'CL_3', 'fa3');
+
+INSERT INTO enrollment VALUES('st1', 'c001', '88.00');
+INSERT INTO enrollment VALUES('st1', 'c002', '65.55');
+INSERT INTO enrollment VALUES('st1', 'c003', '77');
+INSERT INTO enrollment VALUES('st2', 'c001', '100');
+INSERT INTO enrollment VALUES('st2', 'c002', '55');
+INSERT INTO enrollment VALUES('st3', 'c001', '65.00');
+INSERT INTO enrollment VALUES('st3', 'c003', '75.00');
+INSERT INTO enrollment VALUES('st4', 'c003', '95.00');
+
+commit;
+
+-- part c
+select * from faculty;
+select * from student;
+select * from course;
+select * from enrollment;
+
+--part d
+
+--a
+select a.fac_name, b.std_name from faculty a join student b on a.faculty_id=b.advisor_id;
+
+--b
+select DISTINCT a.std_name, a.home_phone from student a where a.student_id not in (select b.student_id from enrollment b);
+
+--c
+SELECT A.std_name, B.max_gpa from student A inner join 
+(SELECT total_credits, MAX(gpa) AS max_gpa FROM student GROUP BY total_credits) B 
+on A.total_credits=B.total_credits and A.gpa=B.max_gpa;
+
+--d
+SELECT  A.std_name, B.course#, B.min_grade FROM student A INNER JOIN
+(select C.student_id, D.course#, C.min_grade from (SELECT student_id, MIN(grade) AS min_grade FROM enrollment GROUP BY student_id) C 
+inner join enrollment D  on C.min_grade=D.grade and C.student_id=D.student_id
+) B
+ON A.student_id = B.student_id
+ORDER BY std_name;
+
+
+--e
+select DISTINCT a.fac_name from faculty a where a.faculty_id not in (select b.advisor_id from student b);
